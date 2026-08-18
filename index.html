@@ -47,6 +47,17 @@
           font-variant-numeric: tabular-nums; }
   .bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; }
   .bar.zero { background: var(--line); }
+  .rows { margin-top: 10px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 4px 0;
+         font-size: 13px; }
+  .row .lbl { flex: 0 0 44%; white-space: nowrap; overflow: hidden;
+              text-overflow: ellipsis; }
+  .row .trk { flex: 1; height: 8px; background: var(--line);
+              border-radius: 4px; overflow: hidden; }
+  .row .fil { display: block; height: 100%; background: var(--accent);
+              border-radius: 4px; }
+  .row .cnt { flex: 0 0 auto; color: var(--muted); font-size: 12px;
+              font-variant-numeric: tabular-nums; }
   .badge { display: inline-block; padding: 2px 9px; border-radius: 999px;
            font-size: 12px; font-weight: 600;
            background: var(--accent-soft); color: var(--accent); }
@@ -199,12 +210,115 @@ async function loadPosthog(session) {
     }
     if (d.error) throw new Error(d.error);
     const dau = d.dau.map(([day, n]) => ({ d: day, n }));
-    const rows = d.events.map(([ev, n]) =>
-      `<tr><td>${ev}</td><td class="num">${n}</td></tr>`).join("");
+
+    const s = d.scalars;
+
+    // Engagement: stickiness = gemiddelde DAU van de laatste 7 dagen
+    // gedeeld door MAU (de industriestandaard; ~20% geldt als goed).
+    const last7 = dau.slice(-7);
+    const avgDau = last7.reduce((a, p) => a + p.n, 0) / Math.max(1, last7.length);
+    const stickiness = s.mau > 0 ? Math.round((avgDau / s.mau) * 100) : 0;
+    const engagement = `<div class="card">
+      <strong>Engagement (betrokkenheid)</strong>
+      <table>
+        <tr><td>Actief afgelopen 7 dagen</td><td class="num">${s.wau}</td></tr>
+        <tr><td>Actief afgelopen 30 dagen</td><td class="num">${s.mau}</td></tr>
+        <tr><td>Stickiness (dagelijks / maandelijks)</td>
+            <td class="num"><span class="badge">${stickiness}%</span></td></tr>
+        <tr><td>App-fouten (7 dagen)</td>
+            <td class="num"><span class="badge ${s.errors > 0 ? "warn" : ""}">${s.errors}</span></td></tr>
+      </table>
+    </div>`;
+
+    // Zoekgebruik en gastgebruik in een eigen kaart.
+    const usage = `<div class="card">
+      <strong>Zoeken en gasten</strong>
+      <table>
+        <tr><td>Gebruikers die zochten (7 dgn)</td><td class="num">${s.search_users}</td></tr>
+        <tr><td>Zoekopdrachten totaal (7 dgn)</td><td class="num">${s.search_total}</td></tr>
+        <tr><td>Gastgebruikers (7 dgn)</td><td class="num">${s.guests_7d}</td></tr>
+        <tr><td>Gastgebruikers (30 dgn)</td><td class="num">${s.guests_30d}</td></tr>
+      </table>
+    </div>`;
+
+    // Funnels met conversiepercentage per stap, geschaald op stap 1.
+    const fCount = Object.fromEntries(d.funnel.map(([ev, n]) => [ev, n]));
+    const funnelCard = (title, steps, note) => {
+      const base = fCount[steps[0][0]] ?? 0;
+      const rows = steps.map(([ev, label]) => {
+        const n = fCount[ev] ?? 0;
+        const pct = base > 0 ? Math.round((n / base) * 100) : 0;
+        return `<div class="row"><span class="lbl">${label}</span>
+          <span class="trk"><span class="fil" style="width:${pct}%"></span></span>
+          <span class="cnt">${n} · ${pct}%</span></div>`;
+      }).join("");
+      const endPct = base > 0
+        ? Math.round(((fCount[steps[steps.length - 1][0]] ?? 0) / base) * 100) : 0;
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <strong>${title}</strong><span class="badge">${endPct}% conversie</span>
+        </div>
+        <div class="rows">${rows}</div>
+        <div class="note" style="margin-top:6px">${note}</div>
+      </div>`;
+    };
+
+    // Platform-verdeling en topacties als horizontale balkjes.
+    const barRows = (pairs, labelFn) => {
+      const max = Math.max(1, ...pairs.map(([, n]) => n));
+      return pairs.map(([k, n]) =>
+        `<div class="row"><span class="lbl">${labelFn(k)}</span>
+          <span class="trk"><span class="fil" style="width:${Math.round((n / max) * 100)}%"></span></span>
+          <span class="cnt">${n}</span></div>`).join("");
+    };
+    const EVENT_LABELS = {
+      restaurant_opened: "Restaurant bekeken", restaurant_searched: "Zoekopdracht",
+      restaurant_added: "Restaurant toegevoegd", favorite_toggled: "Favoriet gewijzigd",
+      map_view_opened: "Kaart geopend", map_marker_tapped: "Kaartpin getikt",
+      map_search_this_area_tapped: "Zoek dit gebied", review_posted: "Review geplaatst",
+      review_upvote_added: "Review-duim omhoog", dish_added: "Gerecht toegevoegd",
+      dish_validation_voted: "Gerecht gevalideerd", allergy_menu_photo_uploaded: "Menufoto geupload",
+      onboarding_step_completed: "Onboarding-stap", onboarding_completed: "Onboarding afgerond",
+      guest_mode_entered: "Gastmodus gestart", account_gate_shown: "Accountvraag getoond",
+      account_gate_converted: "Account na gastmodus", signed_up: "Aangemeld",
+      logged_in: "Ingelogd", signed_out: "Uitgelogd", language_changed: "Taal gewijzigd",
+      medical_disclaimer_acknowledged: "Disclaimer geaccepteerd",
+      community_guidelines_accepted: "Richtlijnen geaccepteerd",
+      supporter_screen_opened: "Supporter-scherm bekeken",
+      supporter_prompt_shown: "Supporter-uitnodiging getoond",
+      feedback_submitted: "Feedback verstuurd", content_reported: "Inhoud gemeld",
+      review_prompt_requested: "Beoordeel-ons-vraag",
+    };
+    const prettify = (ev) => EVENT_LABELS[ev] ??
+      (ev.charAt(0).toUpperCase() + ev.slice(1)).replaceAll("_", " ");
+    const OS_LABELS = { iOS: "iPhone", Android: "Android" };
+
     $("posthog").innerHTML =
-      barChart(dau, "Actieve gebruikers per dag",
-        (dau[dau.length - 1]?.n ?? 0) + " vandaag") +
-      `<div class="card"><strong>Top events (7 dagen)</strong><table>${rows}</table></div>`;
+      barChart(dau, "Actieve gebruikers per dag", (dau[dau.length - 1]?.n ?? 0) + " vandaag") +
+      engagement +
+      funnelCard("Onboarding, stap voor stap", [
+        ["step_welcome", "Welkomscherm voorbij"],
+        ["step_allergy_setup", "Allergieen gekozen"],
+        ["step_location_setup", "Locatie-stap voorbij"],
+        ["step_account_setup", "Account-stap voorbij"],
+        ["onboarding_completed", "Onboarding afgerond"],
+      ], "unieke gebruikers, 30 dagen; het verschil per stap is de uitval") +
+      funnelCard("Gast naar account", [
+        ["account_gate_shown", "Accountvraag gezien"],
+        ["account_gate_converted", "Account aangemaakt"],
+      ], "unieke gebruikers, 7 dagen") +
+      funnelCard("Supporter worden", [
+        ["supporter_screen_opened", "Scherm bekeken"],
+        ["supporter_purchase_started", "Aankoop gestart"],
+        ["supporter_purchase_completed", "Aankoop afgerond"],
+      ], "unieke gebruikers, 7 dagen") +
+      usage +
+      `<div class="card"><strong>Platform (7 dagen)</strong>
+        <div class="rows">${barRows(d.platform, (os) => OS_LABELS[os] ?? os ?? "Onbekend")}</div>
+      </div>` +
+      `<div class="card"><strong>Meest gedane acties (7 dagen)</strong>
+        <div class="rows">${barRows(d.events, prettify)}</div>
+      </div>`;
   } catch (e) {
     $("posthog").innerHTML =
       `<div class="card note">PostHog-cijfers konden niet geladen worden (${e.message}).</div>`;
