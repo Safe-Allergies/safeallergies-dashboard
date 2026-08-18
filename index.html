@@ -6,67 +6,119 @@
 <title>Safe Allergies · Dashboard</title>
 <style>
   :root {
-    --bg: #F7FAFA; --card: #FFFFFF; --line: #E4EDED;
-    --text: #12312F; --muted: #6B8280; --accent: #12B5BA;
-    --accent-soft: #E0F7F8; --warn: #B45309; --warn-bg: #FEF3C7;
+    --bg: #F6FAFA; --card: #FFFFFF; --line: #E3ECEC;
+    --text: #12312F; --muted: #6B8280; --faint: #9AB0AE;
+    --accent: #12B5BA; --accent-soft: #E0F7F8;
+    --warn: #B45309; --warn-bg: #FEF3C7;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0E1B1A; --card: #142422; --line: #1F3533;
-      --text: #E8F2F1; --muted: #7FA09D; --accent: #2BC8CD;
-      --accent-soft: #123B3D; --warn: #F5B45C; --warn-bg: #3A2A10;
+      --bg: #0E1B1A; --card: #142422; --line: #203634;
+      --text: #E8F2F1; --muted: #7FA09D; --faint: #5C7B78;
+      --accent: #2BC8CD; --accent-soft: #123B3D;
+      --warn: #F5B45C; --warn-bg: #3A2A10;
     }
   }
   * { box-sizing: border-box; margin: 0; }
   body {
     background: var(--bg); color: var(--text);
-    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding: 28px 20px 60px;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 26px 20px 70px;
   }
-  .wrap { max-width: 1060px; margin: 0 auto; }
-  header { display: flex; align-items: baseline; justify-content: space-between;
-           gap: 12px; flex-wrap: wrap; margin-bottom: 26px; }
-  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  /* Header */
+  header { display: flex; align-items: center; justify-content: space-between;
+           gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+  h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; }
   h1 span { color: var(--accent); }
+  .meta { display: flex; align-items: center; gap: 14px; }
   .stamp { color: var(--muted); font-size: 12.5px; }
-  h2 { font-size: 12px; font-weight: 700; letter-spacing: 1.1px;
-       text-transform: uppercase; color: var(--muted); margin: 30px 0 12px; }
-  .grid { display: grid; gap: 12px;
-          grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
-  .grid.wide { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+  .signout { background: none; border: none; color: var(--muted);
+             font-size: 12.5px; cursor: pointer; text-decoration: underline; }
+
+  /* Periodefilter */
+  .seg { display: inline-flex; background: var(--card); border: 1px solid var(--line);
+         border-radius: 10px; padding: 3px; gap: 2px; }
+  .seg button { border: none; background: none; color: var(--muted);
+    font-size: 13px; font-weight: 600; padding: 6px 13px; border-radius: 8px;
+    cursor: pointer; }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .seg button:disabled { opacity: 0.5; cursor: default; }
+
+  h2 { font-size: 12px; font-weight: 700; letter-spacing: 1.2px;
+       text-transform: uppercase; color: var(--muted); margin: 34px 0 12px; }
+  h2 small { text-transform: none; letter-spacing: 0; font-weight: 500;
+             color: var(--faint); margin-left: 8px; }
+
+  .grid { display: grid; gap: 14px;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .grid.wide { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  .grid.flows { grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); }
   .card { background: var(--card); border: 1px solid var(--line);
-          border-radius: 14px; padding: 16px; }
-  .kpi .n { font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+          border-radius: 14px; padding: 18px; }
+  .card > strong { font-size: 14.5px; }
+  .cardhead { display: flex; justify-content: space-between;
+              align-items: baseline; gap: 8px; }
+
+  /* KPI's */
+  .kpi .n { font-size: 30px; font-weight: 800; letter-spacing: -0.5px;
             font-variant-numeric: tabular-nums; }
   .kpi .l { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+  /* Staafgrafiek */
   .bars { display: flex; align-items: flex-end; gap: 3px;
-          height: 72px; margin: 12px 0 6px; }
+          height: 84px; margin: 14px 0 6px; }
   .bcol { flex: 1; display: flex; flex-direction: column;
-          justify-content: flex-end; align-items: center; gap: 3px; }
-  .bval { font-size: 10px; line-height: 1; color: var(--muted);
+          justify-content: flex-end; align-items: center; gap: 3px; min-width: 0; }
+  .bval { font-size: 10.5px; line-height: 1; color: var(--muted);
           font-variant-numeric: tabular-nums; }
   .bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; }
   .bar.zero { background: var(--line); }
-  .rows { margin-top: 10px; }
-  .row { display: flex; align-items: center; gap: 8px; padding: 4px 0;
-         font-size: 13px; }
-  .row .lbl { flex: 0 0 44%; white-space: nowrap; overflow: hidden;
+  .ticks { display: flex; justify-content: space-between;
+           color: var(--faint); font-size: 11.5px; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px;
+           font-size: 12px; font-weight: 700; white-space: nowrap;
+           background: var(--accent-soft); color: var(--accent); }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); }
+
+  /* Tabellen */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px;
+          margin-top: 8px; }
+  td { padding: 8px 4px; border-top: 1px solid var(--line); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums;
+           font-weight: 600; }
+  tr:first-child td { border-top: none; }
+  .note { color: var(--faint); font-size: 12.5px; }
+
+  /* Flow-diagram */
+  .fs { margin-top: 12px; }
+  .fs-head { display: flex; justify-content: space-between; gap: 8px;
+             font-size: 13.5px; margin-bottom: 5px; }
+  .fs-num { color: var(--muted); font-variant-numeric: tabular-nums;
+            font-weight: 600; white-space: nowrap; }
+  .fs-trk { height: 20px; background: var(--accent-soft); border-radius: 6px;
+            overflow: hidden; }
+  .fs-fil { height: 100%; background: var(--accent); border-radius: 6px;
+            min-width: 3px; }
+  .fs-drop { margin: 8px 0 -2px; color: var(--faint); font-size: 12px; }
+  .fs-drop b { color: var(--warn); font-weight: 600; }
+
+  /* Horizontale rijen (platform, top acties) */
+  .rows { margin-top: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 5px 0;
+         font-size: 13.5px; }
+  .row .lbl { flex: 0 0 46%; white-space: nowrap; overflow: hidden;
               text-overflow: ellipsis; }
   .row .trk { flex: 1; height: 8px; background: var(--line);
               border-radius: 4px; overflow: hidden; }
   .row .fil { display: block; height: 100%; background: var(--accent);
               border-radius: 4px; }
-  .row .cnt { flex: 0 0 auto; color: var(--muted); font-size: 12px;
-              font-variant-numeric: tabular-nums; }
-  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px;
-           font-size: 12px; font-weight: 600;
-           background: var(--accent-soft); color: var(--accent); }
-  .badge.warn { background: var(--warn-bg); color: var(--warn); }
-  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  td { padding: 7px 4px; border-top: 1px solid var(--line); }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
-  tr:first-child td { border-top: none; }
-  .note { color: var(--muted); font-size: 13px; }
+  .row .cnt { flex: 0 0 auto; color: var(--muted); font-size: 12.5px;
+              font-weight: 600; font-variant-numeric: tabular-nums; }
+
   /* Login */
   .login { max-width: 340px; margin: 12vh auto 0; }
   .login h1 { text-align: center; margin-bottom: 18px; }
@@ -78,8 +130,6 @@
     cursor: pointer; }
   .login .err { color: var(--warn); font-size: 13px; margin-top: 10px;
                 text-align: center; min-height: 20px; }
-  .signout { background: none; border: none; color: var(--muted);
-             font-size: 12.5px; cursor: pointer; text-decoration: underline; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -96,20 +146,27 @@
 <div class="wrap" id="app" hidden>
   <header>
     <h1>Safe <span>Allergies</span> dashboard</h1>
-    <div>
+    <div class="meta">
+      <div class="seg" id="seg"></div>
       <span class="stamp" id="stamp"></span>
       <button class="signout" id="signout">uitloggen</button>
     </div>
   </header>
 
-  <h2>Vandaag de stand</h2>
+  <h2>Totalen <small>alles sinds de start</small></h2>
   <div class="grid" id="totals"></div>
 
-  <h2>Trends</h2>
+  <h2>Groei <small id="growthNote"></small></h2>
   <div class="grid wide" id="trends"></div>
 
-  <h2>Gebruik (PostHog)</h2>
-  <div class="grid wide" id="posthog"><div class="card note">Laden…</div></div>
+  <h2>Gebruik <small id="usageNote"></small></h2>
+  <div class="grid wide" id="usage"></div>
+
+  <h2>Flows <small id="flowNote"></small></h2>
+  <div class="grid flows" id="flows"></div>
+
+  <h2>Acties en platform <small id="actionsNote"></small></h2>
+  <div class="grid wide" id="actions"></div>
 
   <h2>Datakwaliteit</h2>
   <div class="grid wide" id="quality"></div>
@@ -123,37 +180,124 @@ const ANON_KEY = "sb_publishable_EseLz8yQfxqK7gbjyRT3aA_B0xCsMVK";
 const supa = createClient(SUPABASE_URL, ANON_KEY);
 
 const $ = (id) => document.getElementById(id);
+const fmt = (n) => (n ?? 0).toLocaleString("nl-NL");
 const fmtDay = (d) => new Date(d).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+const PERIODS = [7, 14, 30, 90];
+let days = PERIODS.includes(+localStorage.getItem("sa_days"))
+  ? +localStorage.getItem("sa_days") : 14;
+let session = null;
+
+/* ── Bouwstenen ─────────────────────────────────────────── */
 
 function kpi(label, value) {
-  return `<div class="card kpi"><div class="n">${value}</div><div class="l">${label}</div></div>`;
+  return `<div class="card kpi"><div class="n">${fmt(value)}</div><div class="l">${label}</div></div>`;
 }
 
-// One bar per day. At founder-scale counts (0–10/day) bars with the
-// number on top read at a glance where a line chart just wobbles.
-function barChart(series, label, total) {
+// Meer dan ~31 punten leest niet als dagstaafjes; bundel dan per week.
+function bucketize(series) {
+  if (series.length <= 31) return { series, unit: "per dag" };
+  const out = [];
+  for (let i = 0; i < series.length; i += 7) {
+    const chunk = series.slice(i, i + 7);
+    out.push({ d: chunk[0].d, n: chunk.reduce((a, p) => a + p.n, 0) });
+  }
+  return { series: out, unit: "per week" };
+}
+
+function barChart(rawSeries, label, total) {
+  const { series, unit } = bucketize(rawSeries);
   const max = Math.max(1, ...series.map((p) => p.n));
+  const showVals = series.length <= 31;
   const bars = series.map((p) => {
-    const h = Math.round((p.n / max) * 52);
-    return `<div class="bcol" title="${fmtDay(p.d)}: ${p.n}">
-      <span class="bval">${p.n > 0 ? p.n : ""}</span>
+    const h = Math.round((p.n / max) * 58);
+    return `<div class="bcol" title="${fmtDay(p.d)}: ${fmt(p.n)}">
+      ${showVals ? `<span class="bval">${p.n > 0 ? p.n : ""}</span>` : ""}
       <div class="bar${p.n === 0 ? " zero" : ""}" style="height:${Math.max(h, 3)}px"></div>
     </div>`;
   }).join("");
-  const first = fmtDay(series[0]?.d), last = fmtDay(series[series.length - 1]?.d);
+  const mid = series[Math.floor(series.length / 2)];
   return `<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:baseline">
-      <strong>${label}</strong><span class="badge">${total}</span>
-    </div>
+    <div class="cardhead"><strong>${label}</strong><span class="badge">${total}</span></div>
     <div class="bars">${bars}</div>
-    <div class="note" style="display:flex;justify-content:space-between">
-      <span>${first}</span><span>${last}</span>
-    </div>
+    <div class="ticks"><span>${fmtDay(series[0]?.d)}</span>
+      <span>${series.length > 4 ? fmtDay(mid?.d) : ""}</span>
+      <span>${fmtDay(series[series.length - 1]?.d)}</span></div>
+    <div class="note" style="margin-top:4px">${unit}</div>
   </div>`;
 }
 
-async function loadStats(session) {
-  const { data, error } = await supa.rpc("admin_dashboard_stats");
+// Flow: per stap een volle balk met aantal en percentage, en tussen de
+// stappen expliciet de uitval — dat is waar je op stuurt.
+function flowCard(title, steps, note, count) {
+  const base = count[steps[0][0]] ?? 0;
+  let html = "", prev = null;
+  for (const [key, label] of steps) {
+    const n = count[key] ?? 0;
+    const pct = base > 0 ? Math.round((n / base) * 100) : 0;
+    if (prev !== null && prev > 0 && prev - n > 0) {
+      const dropPct = Math.round(((prev - n) / prev) * 100);
+      html += `<div class="fs-drop">↓ <b>${fmt(prev - n)} afgehaakt</b> (${dropPct}% van de vorige stap)</div>`;
+    }
+    html += `<div class="fs">
+      <div class="fs-head"><span>${label}</span><span class="fs-num">${fmt(n)} · ${pct}%</span></div>
+      <div class="fs-trk"><div class="fs-fil" style="width:${Math.max(pct, 1)}%"></div></div>
+    </div>`;
+    prev = n;
+  }
+  const endPct = base > 0
+    ? Math.round(((count[steps[steps.length - 1][0]] ?? 0) / base) * 100) : 0;
+  return `<div class="card">
+    <div class="cardhead"><strong>${title}</strong><span class="badge">${endPct}% conversie</span></div>
+    ${html}
+    <div class="note" style="margin-top:12px">${note}</div>
+  </div>`;
+}
+
+function barRows(pairs, labelFn) {
+  const max = Math.max(1, ...pairs.map(([, n]) => n));
+  return pairs.map(([k, n]) =>
+    `<div class="row"><span class="lbl">${labelFn(k)}</span>
+      <span class="trk"><span class="fil" style="width:${Math.round((n / max) * 100)}%"></span></span>
+      <span class="cnt">${fmt(n)}</span></div>`).join("");
+}
+
+const EVENT_LABELS = {
+  restaurant_opened: "Restaurant bekeken", restaurant_searched: "Zoekopdracht",
+  restaurant_added: "Restaurant toegevoegd", favorite_toggled: "Favoriet gewijzigd",
+  map_view_opened: "Kaart geopend", map_marker_tapped: "Kaartpin getikt",
+  map_search_this_area_tapped: "Zoek dit gebied", review_posted: "Review geplaatst",
+  review_upvote_added: "Review-duim omhoog", dish_added: "Gerecht toegevoegd",
+  dish_validation_voted: "Gerecht gevalideerd", allergy_menu_photo_uploaded: "Menufoto geupload",
+  onboarding_step_completed: "Onboarding-stap", onboarding_completed: "Onboarding afgerond",
+  guest_mode_entered: "Gastmodus gestart", account_gate_shown: "Accountvraag getoond",
+  account_gate_converted: "Account na gastmodus", account_gate_dismissed: "Accountvraag weggeklikt",
+  signed_up: "Aangemeld", logged_in: "Ingelogd", signed_out: "Uitgelogd",
+  language_changed: "Taal gewijzigd",
+  medical_disclaimer_acknowledged: "Disclaimer geaccepteerd",
+  community_guidelines_accepted: "Richtlijnen geaccepteerd",
+  supporter_screen_opened: "Supporter-scherm bekeken",
+  supporter_prompt_shown: "Supporter-uitnodiging getoond",
+  feedback_submitted: "Feedback verstuurd", content_reported: "Inhoud gemeld",
+  review_prompt_requested: "Beoordeel-ons-vraag",
+};
+const prettify = (ev) => EVENT_LABELS[ev] ??
+  (ev.charAt(0).toUpperCase() + ev.slice(1)).replaceAll("_", " ");
+const OS_LABELS = { iOS: "iPhone", Android: "Android" };
+
+/* ── Data laden ─────────────────────────────────────────── */
+
+function setLoading() {
+  const ph = '<div class="card note">Laden…</div>';
+  for (const id of ["trends", "usage", "flows", "actions"]) $(id).innerHTML = ph;
+  const label = `afgelopen ${days} dagen`;
+  $("growthNote").textContent = label;
+  $("usageNote").textContent = label;
+  $("flowNote").textContent = label + "; het verschil per stap is de uitval";
+  $("actionsNote").textContent = label;
+}
+
+async function loadSupabase() {
+  const { data, error } = await supa.rpc("admin_dashboard_stats", { days });
   if (error) throw new Error(error.message);
   const t = data.totals, q = data.quality;
 
@@ -171,12 +315,12 @@ async function loadStats(session) {
 
   const sum = (s) => s.reduce((a, p) => a + p.n, 0);
   $("trends").innerHTML =
-    barChart(data.users_daily, "Nieuwe gebruikers", sum(data.users_daily) + " in 14 dgn") +
-    barChart(data.reviews_daily, "Nieuwe reviews", sum(data.reviews_daily) + " in 14 dgn") +
-    barChart(data.restaurants_daily, "Nieuwe restaurants", sum(data.restaurants_daily) + " in 28 dgn");
+    barChart(data.users_daily, "Nieuwe gebruikers", `${fmt(sum(data.users_daily))} totaal`) +
+    barChart(data.reviews_daily, "Nieuwe reviews", `${fmt(sum(data.reviews_daily))} totaal`) +
+    barChart(data.restaurants_daily, "Nieuwe restaurants", `${fmt(sum(data.restaurants_daily))} totaal`);
 
   const pending = q.pending_list.map((r) =>
-    `<tr><td>${r.name}</td><td class="num">${fmtDay(r.created_at)}</td></tr>`).join("");
+    `<tr><td>${r.name}</td><td class="num" style="color:var(--muted)">${fmtDay(r.created_at)}</td></tr>`).join("");
   $("quality").innerHTML =
     `<div class="card">
        <strong>Controlepunten</strong>
@@ -191,154 +335,128 @@ async function loadStats(session) {
        <strong>Wachtrij (${q.pending_list.length})</strong>
        <table>${pending || '<tr><td class="note">Leeg — alles beoordeeld.</td></tr>'}</table>
      </div>`;
-
-  loadPosthog(session);
 }
 
-async function loadPosthog(session) {
-  try {
-    const r = await fetch(SUPABASE_URL + "/functions/v1/dashboard/posthog", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + session.access_token },
-    });
-    const d = await r.json();
-    if (!d.configured) {
-      $("posthog").innerHTML =
-        '<div class="card note">PostHog nog niet gekoppeld — zet de secrets ' +
-        "POSTHOG_API_KEY en POSTHOG_PROJECT_ID op deze functie en herlaad.</div>";
-      return;
-    }
-    if (d.error) throw new Error(d.error);
-    const dau = d.dau.map(([day, n]) => ({ d: day, n }));
+async function loadPosthog() {
+  const r = await fetch(SUPABASE_URL + "/functions/v1/dashboard/posthog", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + session.access_token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ days }),
+  });
+  const d = await r.json();
+  if (!d.configured) {
+    $("usage").innerHTML =
+      '<div class="card note">PostHog nog niet gekoppeld — zet de secrets ' +
+      "POSTHOG_API_KEY en POSTHOG_PROJECT_ID op de functie en herlaad.</div>";
+    $("flows").innerHTML = "";
+    $("actions").innerHTML = "";
+    return;
+  }
+  if (d.error) throw new Error(d.error);
 
-    const s = d.scalars;
+  const s = d.scalars;
+  const dau = d.dau.map(([day, n]) => ({ d: day, n }));
+  const last7 = dau.slice(-7);
+  const avgDau = last7.reduce((a, p) => a + p.n, 0) / Math.max(1, last7.length);
+  const stickiness = s.mau > 0 ? Math.round((avgDau / s.mau) * 100) : 0;
 
-    // Engagement: stickiness = gemiddelde DAU van de laatste 7 dagen
-    // gedeeld door MAU (de industriestandaard; ~20% geldt als goed).
-    const last7 = dau.slice(-7);
-    const avgDau = last7.reduce((a, p) => a + p.n, 0) / Math.max(1, last7.length);
-    const stickiness = s.mau > 0 ? Math.round((avgDau / s.mau) * 100) : 0;
-    const engagement = `<div class="card">
-      <strong>Engagement (betrokkenheid)</strong>
+  $("usage").innerHTML =
+    barChart(dau, "Actieve gebruikers", `${fmt(dau[dau.length - 1]?.n ?? 0)} vandaag`) +
+    `<div class="card">
+      <strong>Engagement</strong>
       <table>
-        <tr><td>Actief afgelopen 7 dagen</td><td class="num">${s.wau}</td></tr>
-        <tr><td>Actief afgelopen 30 dagen</td><td class="num">${s.mau}</td></tr>
-        <tr><td>Stickiness (dagelijks / maandelijks)</td>
+        <tr><td>Actief afgelopen 7 dagen</td><td class="num">${fmt(s.wau)}</td></tr>
+        <tr><td>Actief afgelopen 30 dagen</td><td class="num">${fmt(s.mau)}</td></tr>
+        <tr><td>Stickiness <span class="note">(dagelijks / maandelijks)</span></td>
             <td class="num"><span class="badge">${stickiness}%</span></td></tr>
-        <tr><td>App-fouten (7 dagen)</td>
-            <td class="num"><span class="badge ${s.errors > 0 ? "warn" : ""}">${s.errors}</span></td></tr>
+        <tr><td>App-fouten in de periode</td>
+            <td class="num"><span class="badge ${s.errors > 0 ? "warn" : ""}">${fmt(s.errors)}</span></td></tr>
       </table>
-    </div>`;
-
-    // Zoekgebruik en gastgebruik in een eigen kaart.
-    const usage = `<div class="card">
+    </div>` +
+    `<div class="card">
       <strong>Zoeken en gasten</strong>
       <table>
-        <tr><td>Gebruikers die zochten (7 dgn)</td><td class="num">${s.search_users}</td></tr>
-        <tr><td>Zoekopdrachten totaal (7 dgn)</td><td class="num">${s.search_total}</td></tr>
-        <tr><td>Gastgebruikers (7 dgn)</td><td class="num">${s.guests_7d}</td></tr>
-        <tr><td>Gastgebruikers (30 dgn)</td><td class="num">${s.guests_30d}</td></tr>
+        <tr><td>Gebruikers die zochten</td><td class="num">${fmt(s.search_users)}</td></tr>
+        <tr><td>Zoekopdrachten totaal</td><td class="num">${fmt(s.search_total)}</td></tr>
+        <tr><td>Gastgebruikers in de periode</td><td class="num">${fmt(s.guests)}</td></tr>
+        <tr><td>Gastgebruikers afgelopen 30 dagen</td><td class="num">${fmt(s.guests_30d)}</td></tr>
       </table>
     </div>`;
 
-    // Funnels met conversiepercentage per stap, geschaald op stap 1.
-    const fCount = Object.fromEntries(d.funnel.map(([ev, n]) => [ev, n]));
-    const funnelCard = (title, steps, note) => {
-      const base = fCount[steps[0][0]] ?? 0;
-      const rows = steps.map(([ev, label]) => {
-        const n = fCount[ev] ?? 0;
-        const pct = base > 0 ? Math.round((n / base) * 100) : 0;
-        return `<div class="row"><span class="lbl">${label}</span>
-          <span class="trk"><span class="fil" style="width:${pct}%"></span></span>
-          <span class="cnt">${n} · ${pct}%</span></div>`;
-      }).join("");
-      const endPct = base > 0
-        ? Math.round(((fCount[steps[steps.length - 1][0]] ?? 0) / base) * 100) : 0;
-      return `<div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <strong>${title}</strong><span class="badge">${endPct}% conversie</span>
-        </div>
-        <div class="rows">${rows}</div>
-        <div class="note" style="margin-top:6px">${note}</div>
-      </div>`;
-    };
+  const fCount = Object.fromEntries(d.funnel.map(([ev, n]) => [ev, n]));
+  const note = `unieke gebruikers, afgelopen ${d.days} dagen`;
+  $("flows").innerHTML =
+    flowCard("Onboarding", [
+      ["step_welcome", "Welkomscherm voorbij"],
+      ["step_allergy_setup", "Allergieen gekozen"],
+      ["step_location_setup", "Locatie-stap voorbij"],
+      ["step_account_setup", "Account-stap voorbij"],
+      ["onboarding_completed", "Onboarding afgerond"],
+    ], note, fCount) +
+    flowCard("Gast naar account", [
+      ["account_gate_shown", "Accountvraag gezien"],
+      ["account_gate_converted", "Account aangemaakt"],
+    ], note, fCount) +
+    flowCard("Supporter worden", [
+      ["supporter_screen_opened", "Scherm bekeken"],
+      ["supporter_purchase_started", "Aankoop gestart"],
+      ["supporter_purchase_completed", "Aankoop afgerond"],
+    ], note, fCount);
 
-    // Platform-verdeling en topacties als horizontale balkjes.
-    const barRows = (pairs, labelFn) => {
-      const max = Math.max(1, ...pairs.map(([, n]) => n));
-      return pairs.map(([k, n]) =>
-        `<div class="row"><span class="lbl">${labelFn(k)}</span>
-          <span class="trk"><span class="fil" style="width:${Math.round((n / max) * 100)}%"></span></span>
-          <span class="cnt">${n}</span></div>`).join("");
-    };
-    const EVENT_LABELS = {
-      restaurant_opened: "Restaurant bekeken", restaurant_searched: "Zoekopdracht",
-      restaurant_added: "Restaurant toegevoegd", favorite_toggled: "Favoriet gewijzigd",
-      map_view_opened: "Kaart geopend", map_marker_tapped: "Kaartpin getikt",
-      map_search_this_area_tapped: "Zoek dit gebied", review_posted: "Review geplaatst",
-      review_upvote_added: "Review-duim omhoog", dish_added: "Gerecht toegevoegd",
-      dish_validation_voted: "Gerecht gevalideerd", allergy_menu_photo_uploaded: "Menufoto geupload",
-      onboarding_step_completed: "Onboarding-stap", onboarding_completed: "Onboarding afgerond",
-      guest_mode_entered: "Gastmodus gestart", account_gate_shown: "Accountvraag getoond",
-      account_gate_converted: "Account na gastmodus", signed_up: "Aangemeld",
-      logged_in: "Ingelogd", signed_out: "Uitgelogd", language_changed: "Taal gewijzigd",
-      medical_disclaimer_acknowledged: "Disclaimer geaccepteerd",
-      community_guidelines_accepted: "Richtlijnen geaccepteerd",
-      supporter_screen_opened: "Supporter-scherm bekeken",
-      supporter_prompt_shown: "Supporter-uitnodiging getoond",
-      feedback_submitted: "Feedback verstuurd", content_reported: "Inhoud gemeld",
-      review_prompt_requested: "Beoordeel-ons-vraag",
-    };
-    const prettify = (ev) => EVENT_LABELS[ev] ??
-      (ev.charAt(0).toUpperCase() + ev.slice(1)).replaceAll("_", " ");
-    const OS_LABELS = { iOS: "iPhone", Android: "Android" };
-
-    $("posthog").innerHTML =
-      barChart(dau, "Actieve gebruikers per dag", (dau[dau.length - 1]?.n ?? 0) + " vandaag") +
-      engagement +
-      funnelCard("Onboarding, stap voor stap", [
-        ["step_welcome", "Welkomscherm voorbij"],
-        ["step_allergy_setup", "Allergieen gekozen"],
-        ["step_location_setup", "Locatie-stap voorbij"],
-        ["step_account_setup", "Account-stap voorbij"],
-        ["onboarding_completed", "Onboarding afgerond"],
-      ], "unieke gebruikers, 30 dagen; het verschil per stap is de uitval") +
-      funnelCard("Gast naar account", [
-        ["account_gate_shown", "Accountvraag gezien"],
-        ["account_gate_converted", "Account aangemaakt"],
-      ], "unieke gebruikers, 7 dagen") +
-      funnelCard("Supporter worden", [
-        ["supporter_screen_opened", "Scherm bekeken"],
-        ["supporter_purchase_started", "Aankoop gestart"],
-        ["supporter_purchase_completed", "Aankoop afgerond"],
-      ], "unieke gebruikers, 7 dagen") +
-      usage +
-      `<div class="card"><strong>Platform (7 dagen)</strong>
-        <div class="rows">${barRows(d.platform, (os) => OS_LABELS[os] ?? os ?? "Onbekend")}</div>
-      </div>` +
-      `<div class="card"><strong>Meest gedane acties (7 dagen)</strong>
-        <div class="rows">${barRows(d.events, prettify)}</div>
-      </div>`;
-  } catch (e) {
-    $("posthog").innerHTML =
-      `<div class="card note">PostHog-cijfers konden niet geladen worden (${e.message}).</div>`;
-  }
+  $("actions").innerHTML =
+    `<div class="card"><strong>Meest gedane acties</strong>
+      <div class="rows">${barRows(d.events, prettify)}</div>
+    </div>` +
+    `<div class="card"><strong>Platform</strong>
+      <div class="rows">${barRows(d.platform, (os) => OS_LABELS[os] ?? os ?? "Onbekend")}</div>
+    </div>`;
 }
 
-async function show(session) {
-  $("login").hidden = true;
-  $("app").hidden = false;
+async function loadAll() {
+  setLoading();
+  for (const b of document.querySelectorAll("#seg button")) b.disabled = true;
   try {
-    await loadStats(session);
+    await loadSupabase();
+    try {
+      await loadPosthog();
+    } catch (e) {
+      const msg = `<div class="card note">PostHog-cijfers konden niet geladen worden (${e.message}).</div>`;
+      $("usage").innerHTML = msg; $("flows").innerHTML = ""; $("actions").innerHTML = "";
+    }
   } catch (e) {
-    // Surface the real reason on the login screen instead of silently
-    // bouncing — an invisible error here made every failure look like
-    // "logging in does not work".
     await supa.auth.signOut();
     $("app").hidden = true;
     $("login").hidden = false;
     $("loginErr").textContent = "Ingelogd, maar data laden mislukte: " + e.message;
+  } finally {
+    for (const b of document.querySelectorAll("#seg button")) b.disabled = false;
   }
+}
+
+/* ── Periodefilter en auth ──────────────────────────────── */
+
+function renderSeg() {
+  $("seg").innerHTML = PERIODS.map((p) =>
+    `<button data-d="${p}" class="${p === days ? "on" : ""}">${p} dgn</button>`).join("");
+  for (const b of document.querySelectorAll("#seg button")) {
+    b.onclick = () => {
+      days = +b.dataset.d;
+      localStorage.setItem("sa_days", days);
+      renderSeg();
+      loadAll();
+    };
+  }
+}
+
+function show(s) {
+  session = s;
+  $("login").hidden = true;
+  $("app").hidden = false;
+  renderSeg();
+  loadAll();
 }
 
 $("loginBtn").onclick = async () => {
@@ -353,8 +471,8 @@ $("loginBtn").onclick = async () => {
 $("pass").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
 $("signout").onclick = async () => { await supa.auth.signOut(); location.reload(); };
 
-const { data: { session } } = await supa.auth.getSession();
-if (session) show(session); else $("login").hidden = false;
+const { data: { session: existing } } = await supa.auth.getSession();
+if (existing) show(existing); else $("login").hidden = false;
 </script>
 </body>
 </html>
