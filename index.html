@@ -207,8 +207,13 @@ async function show(session) {
   try {
     await loadStats(session);
   } catch (e) {
+    // Surface the real reason on the login screen instead of silently
+    // bouncing — an invisible error here made every failure look like
+    // "logging in does not work".
     await supa.auth.signOut();
-    location.reload();
+    $("app").hidden = true;
+    $("login").hidden = false;
+    $("loginErr").textContent = "Ingelogd, maar data laden mislukte: " + e.message;
   }
 }
 
