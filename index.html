@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safe Allergies · Dashboard</title>
+<style>
+  :root {
+    --bg: #F7FAFA; --card: #FFFFFF; --line: #E4EDED;
+    --text: #12312F; --muted: #6B8280; --accent: #12B5BA;
+    --accent-soft: #E0F7F8; --warn: #B45309; --warn-bg: #FEF3C7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0E1B1A; --card: #142422; --line: #1F3533;
+      --text: #E8F2F1; --muted: #7FA09D; --accent: #2BC8CD;
+      --accent-soft: #123B3D; --warn: #F5B45C; --warn-bg: #3A2A10;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 28px 20px 60px;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  header { display: flex; align-items: baseline; justify-content: space-between;
+           gap: 12px; flex-wrap: wrap; margin-bottom: 26px; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
+  h1 span { color: var(--accent); }
+  .stamp { color: var(--muted); font-size: 12.5px; }
+  h2 { font-size: 12px; font-weight: 700; letter-spacing: 1.1px;
+       text-transform: uppercase; color: var(--muted); margin: 30px 0 12px; }
+  .grid { display: grid; gap: 12px;
+          grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
+  .grid.wide { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line);
+          border-radius: 14px; padding: 16px; }
+  .kpi .n { font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+            font-variant-numeric: tabular-nums; }
+  .kpi .l { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .spark svg { display: block; width: 100%; height: 44px; margin-top: 10px; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px;
+           font-size: 12px; font-weight: 600;
+           background: var(--accent-soft); color: var(--accent); }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  td { padding: 7px 4px; border-top: 1px solid var(--line); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  tr:first-child td { border-top: none; }
+  .note { color: var(--muted); font-size: 13px; }
+  /* Login */
+  .login { max-width: 340px; margin: 12vh auto 0; }
+  .login h1 { text-align: center; margin-bottom: 18px; }
+  .login input { width: 100%; padding: 12px 14px; margin-bottom: 10px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--text); font-size: 15px; }
+  .login button { width: 100%; padding: 12px; border: none; border-radius: 10px;
+    background: var(--accent); color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; }
+  .login .err { color: var(--warn); font-size: 13px; margin-top: 10px;
+                text-align: center; min-height: 20px; }
+  .signout { background: none; border: none; color: var(--muted);
+             font-size: 12.5px; cursor: pointer; text-decoration: underline; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="login" id="login" hidden>
+  <h1>Safe <span>Allergies</span></h1>
+  <input id="email" type="email" placeholder="E-mailadres" autocomplete="username">
+  <input id="pass" type="password" placeholder="Wachtwoord" autocomplete="current-password">
+  <button id="loginBtn">Inloggen</button>
+  <div class="err" id="loginErr"></div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <h1>Safe <span>Allergies</span> dashboard</h1>
+    <div>
+      <span class="stamp" id="stamp"></span>
+      <button class="signout" id="signout">uitloggen</button>
+    </div>
+  </header>
+
+  <h2>Vandaag de stand</h2>
+  <div class="grid" id="totals"></div>
+
+  <h2>Trends</h2>
+  <div class="grid wide" id="trends"></div>
+
+  <h2>Gebruik (PostHog)</h2>
+  <div class="grid wide" id="posthog"><div class="card note">Laden…</div></div>
+
+  <h2>Datakwaliteit</h2>
+  <div class="grid wide" id="quality"></div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://lrfpiscnfoqhzjvussyz.supabase.co";
+const ANON_KEY = "sb_publishable_EseLz8yQfxqK7gbjyRT3aA_B0xCsMVK";
+const supa = createClient(SUPABASE_URL, ANON_KEY);
+
+const $ = (id) => document.getElementById(id);
+const fmtDay = (d) => new Date(d).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+
+function kpi(label, value) {
+  return `<div class="card kpi"><div class="n">${value}</div><div class="l">${label}</div></div>`;
+}
+
+function sparkline(series, label, total) {
+  const max = Math.max(1, ...series.map((p) => p.n));
+  const w = 100, h = 40, step = w / Math.max(1, series.length - 1);
+  const pts = series.map((p, i) =>
+    `${(i * step).toFixed(1)},${(h - (p.n / max) * (h - 4)).toFixed(1)}`).join(" ");
+  const first = fmtDay(series[0]?.d), last = fmtDay(series[series.length - 1]?.d);
+  return `<div class="card spark">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <strong>${label}</strong><span class="badge">${total}</span>
+    </div>
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"
+        stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="note" style="display:flex;justify-content:space-between">
+      <span>${first}</span><span>${last}</span>
+    </div>
+  </div>`;
+}
+
+async function loadStats(session) {
+  const { data, error } = await supa.rpc("admin_dashboard_stats");
+  if (error) throw new Error(error.message);
+  const t = data.totals, q = data.quality;
+
+  $("stamp").textContent = "bijgewerkt " +
+    new Date(data.generated_at).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+
+  $("totals").innerHTML =
+    kpi("gebruikers", t.users) +
+    kpi("restaurants live", t.restaurants_approved) +
+    kpi("in de wachtrij", t.restaurants_pending) +
+    kpi("reviews", t.reviews) +
+    kpi("gerechten", t.dishes) +
+    kpi("favorieten", t.favorites) +
+    kpi("supporters", t.supporters);
+
+  const sum = (s) => s.reduce((a, p) => a + p.n, 0);
+  $("trends").innerHTML =
+    sparkline(data.users_daily, "Nieuwe gebruikers", sum(data.users_daily) + " in 14 dgn") +
+    sparkline(data.reviews_daily, "Nieuwe reviews", sum(data.reviews_daily) + " in 14 dgn") +
+    sparkline(data.restaurants_daily, "Nieuwe restaurants", sum(data.restaurants_daily) + " in 28 dgn");
+
+  const pending = q.pending_list.map((r) =>
+    `<tr><td>${r.name}</td><td class="num">${fmtDay(r.created_at)}</td></tr>`).join("");
+  $("quality").innerHTML =
+    `<div class="card">
+       <strong>Controlepunten</strong>
+       <table>
+         <tr><td>Restaurants met 100%-claims</td>
+             <td class="num"><span class="badge ${q.with_claims > 0 ? "warn" : ""}">${q.with_claims}</span></td></tr>
+         <tr><td>“Heeft allergiemenu” zonder bewijs</td>
+             <td class="num"><span class="badge ${q.menu_without_evidence > 0 ? "warn" : ""}">${q.menu_without_evidence}</span></td></tr>
+       </table>
+     </div>
+     <div class="card">
+       <strong>Wachtrij (${q.pending_list.length})</strong>
+       <table>${pending || '<tr><td class="note">Leeg — alles beoordeeld.</td></tr>'}</table>
+     </div>`;
+
+  loadPosthog(session);
+}
+
+async function loadPosthog(session) {
+  try {
+    const r = await fetch(SUPABASE_URL + "/functions/v1/dashboard/posthog", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + session.access_token },
+    });
+    const d = await r.json();
+    if (!d.configured) {
+      $("posthog").innerHTML =
+        '<div class="card note">PostHog nog niet gekoppeld — zet de secrets ' +
+        "POSTHOG_API_KEY en POSTHOG_PROJECT_ID op deze functie en herlaad.</div>";
+      return;
+    }
+    if (d.error) throw new Error(d.error);
+    const dau = d.dau.map(([day, n]) => ({ d: day, n }));
+    const rows = d.events.map(([ev, n]) =>
+      `<tr><td>${ev}</td><td class="num">${n}</td></tr>`).join("");
+    $("posthog").innerHTML =
+      sparkline(dau, "Actieve gebruikers per dag",
+        (dau[dau.length - 1]?.n ?? 0) + " vandaag") +
+      `<div class="card"><strong>Top events (7 dagen)</strong><table>${rows}</table></div>`;
+  } catch (e) {
+    $("posthog").innerHTML =
+      `<div class="card note">PostHog-cijfers konden niet geladen worden (${e.message}).</div>`;
+  }
+}
+
+async function show(session) {
+  $("login").hidden = true;
+  $("app").hidden = false;
+  try {
+    await loadStats(session);
+  } catch (e) {
+    await supa.auth.signOut();
+    location.reload();
+  }
+}
+
+$("loginBtn").onclick = async () => {
+  $("loginErr").textContent = "";
+  const { data, error } = await supa.auth.signInWithPassword({
+    email: $("email").value.trim(),
+    password: $("pass").value,
+  });
+  if (error) { $("loginErr").textContent = "Inloggen mislukt: " + error.message; return; }
+  show(data.session);
+};
+$("pass").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
+$("signout").onclick = async () => { await supa.auth.signOut(); location.reload(); };
+
+const { data: { session } } = await supa.auth.getSession();
+if (session) show(session); else $("login").hidden = false;
+</script>
+</body>
+</html>
