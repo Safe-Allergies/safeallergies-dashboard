@@ -39,7 +39,14 @@
   .kpi .n { font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
             font-variant-numeric: tabular-nums; }
   .kpi .l { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
-  .spark svg { display: block; width: 100%; height: 44px; margin-top: 10px; }
+  .bars { display: flex; align-items: flex-end; gap: 3px;
+          height: 72px; margin: 12px 0 6px; }
+  .bcol { flex: 1; display: flex; flex-direction: column;
+          justify-content: flex-end; align-items: center; gap: 3px; }
+  .bval { font-size: 10px; line-height: 1; color: var(--muted);
+          font-variant-numeric: tabular-nums; }
+  .bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; }
+  .bar.zero { background: var(--line); }
   .badge { display: inline-block; padding: 2px 9px; border-radius: 999px;
            font-size: 12px; font-weight: 600;
            background: var(--accent-soft); color: var(--accent); }
@@ -111,20 +118,23 @@ function kpi(label, value) {
   return `<div class="card kpi"><div class="n">${value}</div><div class="l">${label}</div></div>`;
 }
 
-function sparkline(series, label, total) {
+// One bar per day. At founder-scale counts (0–10/day) bars with the
+// number on top read at a glance where a line chart just wobbles.
+function barChart(series, label, total) {
   const max = Math.max(1, ...series.map((p) => p.n));
-  const w = 100, h = 40, step = w / Math.max(1, series.length - 1);
-  const pts = series.map((p, i) =>
-    `${(i * step).toFixed(1)},${(h - (p.n / max) * (h - 4)).toFixed(1)}`).join(" ");
+  const bars = series.map((p) => {
+    const h = Math.round((p.n / max) * 52);
+    return `<div class="bcol" title="${fmtDay(p.d)}: ${p.n}">
+      <span class="bval">${p.n > 0 ? p.n : ""}</span>
+      <div class="bar${p.n === 0 ? " zero" : ""}" style="height:${Math.max(h, 3)}px"></div>
+    </div>`;
+  }).join("");
   const first = fmtDay(series[0]?.d), last = fmtDay(series[series.length - 1]?.d);
-  return `<div class="card spark">
+  return `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:baseline">
       <strong>${label}</strong><span class="badge">${total}</span>
     </div>
-    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-      <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"
-        stroke-linejoin="round" stroke-linecap="round"/>
-    </svg>
+    <div class="bars">${bars}</div>
     <div class="note" style="display:flex;justify-content:space-between">
       <span>${first}</span><span>${last}</span>
     </div>
@@ -150,9 +160,9 @@ async function loadStats(session) {
 
   const sum = (s) => s.reduce((a, p) => a + p.n, 0);
   $("trends").innerHTML =
-    sparkline(data.users_daily, "Nieuwe gebruikers", sum(data.users_daily) + " in 14 dgn") +
-    sparkline(data.reviews_daily, "Nieuwe reviews", sum(data.reviews_daily) + " in 14 dgn") +
-    sparkline(data.restaurants_daily, "Nieuwe restaurants", sum(data.restaurants_daily) + " in 28 dgn");
+    barChart(data.users_daily, "Nieuwe gebruikers", sum(data.users_daily) + " in 14 dgn") +
+    barChart(data.reviews_daily, "Nieuwe reviews", sum(data.reviews_daily) + " in 14 dgn") +
+    barChart(data.restaurants_daily, "Nieuwe restaurants", sum(data.restaurants_daily) + " in 28 dgn");
 
   const pending = q.pending_list.map((r) =>
     `<tr><td>${r.name}</td><td class="num">${fmtDay(r.created_at)}</td></tr>`).join("");
@@ -192,7 +202,7 @@ async function loadPosthog(session) {
     const rows = d.events.map(([ev, n]) =>
       `<tr><td>${ev}</td><td class="num">${n}</td></tr>`).join("");
     $("posthog").innerHTML =
-      sparkline(dau, "Actieve gebruikers per dag",
+      barChart(dau, "Actieve gebruikers per dag",
         (dau[dau.length - 1]?.n ?? 0) + " vandaag") +
       `<div class="card"><strong>Top events (7 dagen)</strong><table>${rows}</table></div>`;
   } catch (e) {
